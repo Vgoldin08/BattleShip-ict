@@ -1,44 +1,33 @@
 const WATER_COLOR = 'blue';
 const HIT_COLOR = 'red';
 const INITIAL_COLOR = 'gray';
-let currentLevel = 1;
+let currentLevel = 0;
 let torpedo;
+let bombUses = 1;
+
 
 $(document).ready(function() {
-    $('#previousLevelBtn').click(function() {
-        if (currentLevel > 1) {
-            currentLevel--;
-            createGrid(currentLevel + 3);
-        }
-    });
-
-    $('#nextLevelBtn').click(function() {
-        if (currentLevel < 10) {
-            currentLevel++;
-            createGrid(currentLevel + 3);
-        }
-    });
-
-    $('#restartLevelBtn').click(function() {
-        createGrid(currentLevel + 3);
-    });
-
     let gridStates = [];
     let boatPositions = [];
 
+
     function createGrid(n) {
         $('#level').html(currentLevel);
-
+        bombUses = 1;
         var gridSize = 500;
         var itemSize = gridSize / n;
         $('#grid').empty().css({'width': gridSize + 'px', 'height': gridSize + 'px'});
 
+
         gridStates = new Array(n * n).fill(INITIAL_COLOR);
         boatPositions = placeBoats(n);
 
-        torpedo = Math.ceil(n * n / 3 + 5); // Adjusting torpedo count based on grid size
+
+        torpedo = Math.ceil(n * n / 3 + 5);
         $('#torpedoCount').html(torpedo);
         updateBoatCount();
+        updatePowerUpsCount();
+
 
         for (var i = 0; i < n * n; i++) {
             $('<div />', {
@@ -55,30 +44,22 @@ $(document).ready(function() {
             }).appendTo('#grid');
         }
 
+
         $('div[data-type="gridItemClick"]').click(function(e) {
-            if (torpedo > 0) {
-                torpedo--;
-
-                let targetIndex = e.currentTarget.id.split('-')[1];
-                gridStates[targetIndex] = (boatPositions[targetIndex]) ? HIT_COLOR : WATER_COLOR;
-                $('#' + e.currentTarget.id).css('background-color', gridStates[targetIndex]);
-
-                $('#torpedoCount').html(torpedo);
-                updateNextLevelButton();
-                updateBoatCount();
-            } else {
-                console.log("No more torpedoes left.");
-            }
+            handleItemClick(e);
         });
     }
 
+
     function placeBoats(n) {
         let boats = new Array(n * n).fill(0);
-        let totalBoats = 2 + currentLevel; // Number of boats increases with level
+        let totalBoats = 2 + currentLevel;
+
 
         while (totalBoats > 0) {
-            let size = Math.min(totalBoats, Math.floor(Math.random() * 3) + 1); // Random boat size 1-3
+            let size = Math.min(totalBoats, Math.floor(Math.random() * 3) + 1);
             let start = Math.floor(Math.random() * boats.length);
+
 
             if (canPlaceBoat(boats, n, start, size)) {
                 for (let i = start; i < start + size; i++) {
@@ -90,6 +71,7 @@ $(document).ready(function() {
         return boats;
     }
 
+
     function canPlaceBoat(boats, n, start, size) {
         let row = Math.floor(start / n);
         for (let i = start; i < start + size; i++) {
@@ -100,17 +82,113 @@ $(document).ready(function() {
         return true;
     }
 
-    function updateNextLevelButton() {
-        let hitCount = gridStates.filter(color => color === HIT_COLOR).length;
-        let requiredHits = boatPositions.filter(position => position === 1).length;
-        $('#nextLevelBtn').prop('disabled', hitCount !== requiredHits);
-    }
 
     function updateBoatCount() {
         let boatsLeft = boatPositions.filter(position => position === 1).length - gridStates.filter(color => color === HIT_COLOR).length;
         $('#boatCount').html(boatsLeft);
     }
 
+
+    function updatePowerUpsCount() {
+        $('#bombCount').html(bombUses);
+    }
+
+
+    function handleItemClick(e) {
+        if (torpedo > 0) {
+            torpedo--;
+   
+           
+            if (torpedo === 0) {
+                gameOver();
+                return;
+            }
+   
+            let targetIndex = parseInt(e.currentTarget.id.split('-')[1]);
+            processHit(targetIndex);
+   
+            $('#torpedoCount').html(torpedo);
+            checkWinCondition();
+            updateBoatCount();
+        } else {
+            gameOver();
+        }
+    }
+   
+
+
+    function processHit(index) {
+        if (!gridStates[index] || gridStates[index] === INITIAL_COLOR) {
+            gridStates[index] = (boatPositions[index]) ? HIT_COLOR : WATER_COLOR;
+            $('#gridItem-' + index).css('background-color', gridStates[index]);
+        }
+    }
+
+
+    function checkWinCondition() {
+        let hitCount = gridStates.filter(color => color === HIT_COLOR).length;
+        let requiredHits = boatPositions.filter(position => position === 1).length;
+   
+        if (hitCount === requiredHits) {
+           
+            updateBoatCount();
+            gridStates.forEach((state, index) => {
+                if (boatPositions[index] === 1 && state !== HIT_COLOR) {
+                    gridStates[index] = HIT_COLOR;
+                    $('#gridItem-' + index).css('background-color', HIT_COLOR);
+                }
+            });
+   
+           
+            setTimeout(function() {
+                alert("Congratulations! You won!");
+                currentLevel++;
+                createGrid(currentLevel + 3);
+            }, 100);
+        }
+    }
+   
+
+
+    function gameOver() {
+        setTimeout(function() {
+            alert("No more torpedoes left! You lost!");
+            createGrid(currentLevel + 3);
+        }, 300);
+    }
+
+
+   
+    function useBomb() {
+        if (bombUses > 0) {
+            bombUses--;
+            updatePowerUpsCount();
+
+
+            let bombTargets = [];
+            while (bombTargets.length < 5) {
+                let randomIndex = Math.floor(Math.random() * gridStates.length);
+                if (!bombTargets.includes(randomIndex)) {
+                    bombTargets.push(randomIndex);
+                }
+            }
+
+
+            bombTargets.forEach(index => processHit(index));
+            checkWinCondition();
+            updateBoatCount();
+        }
+    }
+
+
+
+
+
+
+    $('#useBomb').click(function() {
+        useBomb();
+    });
+
+
     createGrid(currentLevel + 3);
-    updateNextLevelButton();
 });
