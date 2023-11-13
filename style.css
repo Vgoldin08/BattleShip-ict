@@ -3,15 +3,11 @@
   flex-wrap: wrap;
   margin: 0 auto;
 
-
 }
 .grid-item {
   border: 3px solid #000000;
   box-sizing: border-box;
 }
-
-
-
 
 
 
@@ -22,7 +18,6 @@ body {
   padding: 20px;
   text-align: center;
 }
-
 
 
 h1 {
@@ -37,7 +32,6 @@ h1 {
 }
 
 
-
 #gameInfo {
   display: flex;
   justify-content: center;
@@ -46,7 +40,7 @@ h1 {
 
 #gameInfo p {
   margin: 0 15px;
-  font-size: 18px;
+  font-size: 18px; 
 }
 
 #gameInfo span {
@@ -62,7 +56,7 @@ button {
   border-radius: 5px;
   color: rgb(255, 255, 255);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 16px; 
   outline: none;
 }
 
@@ -74,7 +68,6 @@ button:active {
   background-color: rgb(0, 53, 128);
 }
 
-
 button:disabled {
   background-color: rgb(69, 150, 236);
 }
@@ -83,14 +76,26 @@ button:disabled {
   #gameInfo {
     flex-direction: column;
   }
- 
+  
   #gameInfo p {
     margin: 10px 0;
   }
 }
 
 
-
 .controlCenter {
   padding: 5px;
+}
+
+
+
+#Score {
+font-family: 'Arial', sans-serif;
+background-color: #f2f2f2;
+padding: 20px;
+border-radius: 10px;
+box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+max-width: 300px;
+margin: 20px auto;
+text-align: center;
 }
