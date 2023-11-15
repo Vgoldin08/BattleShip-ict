@@ -1,19 +1,24 @@
 const WATER_COLOR = 'blue';
 const HIT_COLOR = 'red';
 const INITIAL_COLOR = 'gray';
+const BOMB_COLOR = 'black';
 let currentLevel = 0;
 let torpedo;
-let bombUses = 1;
+
+
 let score = 300;
+
+
+
 
 $(document).ready(function() {
     let gridStates = [];
     let boatPositions = [];
+    let radarCount = 0; 
 
     function createGrid(n) {
         $('#level').html(currentLevel);
-        bombUses = 1;
-        var gridSize = 500;
+        var gridSize = 570;
         var itemSize = gridSize / n;
         $('#grid').empty().css({'width': gridSize + 'px', 'height': gridSize + 'px'});
         gridStates = new Array(n * n).fill(INITIAL_COLOR);
@@ -21,7 +26,6 @@ $(document).ready(function() {
         torpedo = Math.ceil(n * n / 3 + 5); 
         $('#torpedoCount').html(torpedo);
         updateBoatCount();
-        updatePowerUpsCount();
         updateScore();
 
         for (var i = 0; i < n * n; i++) {
@@ -34,7 +38,7 @@ $(document).ready(function() {
                     'height': itemSize + 'px',
                     'line-height': itemSize + 'px',
                     'background-color': gridStates[i],
-                    'text-align': 'center'
+                    'text-align': 'center',
                 }
             }).appendTo('#grid');
         }
@@ -42,6 +46,8 @@ $(document).ready(function() {
         $('div[data-type="gridItemClick"]').click(function(e) {
             handleItemClick(e);
         });
+        
+        
     }
 
     function placeBoats(n) {
@@ -84,22 +90,22 @@ $(document).ready(function() {
     function handleItemClick(e) {
         if (torpedo > 0) {
             torpedo--;
-
-            if (torpedo === 0) {
-                gameOver();
-                return;
-            }
-
+    
             let targetIndex = parseInt(e.currentTarget.id.split('-')[1]);
             processHit(targetIndex);
-
+    
             $('#torpedoCount').html(torpedo);
             checkWinCondition();
             updateBoatCount();
+    
+            if (torpedo === 0) {
+                setTimeout(gameOver, 300);
+            }
         } else {
             gameOver();
         }
     }
+    
 
     function processHit(index) {
         if (!gridStates[index] || gridStates[index] === INITIAL_COLOR) {
@@ -112,6 +118,7 @@ $(document).ready(function() {
             }
             $('#gridItem-' + index).css('background-color', gridStates[index]);
             updateScore();
+            tryAcquireRadar();
         }
     }
 
@@ -139,39 +146,114 @@ $(document).ready(function() {
     }
 
     function gameOver() {
+        
+        updateGridForGameOver();
+    
+       
         setTimeout(function() {
-            score -= 147 +(currentLevel *4)
+            score -= 147 + (currentLevel * 4);
+            updateScoreDisplay();
             alert("No more torpedoes left! You lost!");
             createGrid(currentLevel + 3);
-        }, 300);
+        }, 1000); 
+    }
+    
+    function gameOver() {
+    
+    updateGridForGameOver();
+
+    
+    setTimeout(function() {
+        score -= 147 + (currentLevel * 4);
+        updateScoreDisplay();
+        alert("No more torpedoes left! You lost!");
+        createGrid(currentLevel + 3);
+    }, 300); 
+}
+
+function updateGridForGameOver() {
+    
+    const BOAT_COLOR = 'yellow'; 
+
+    
+    gridStates.forEach((state, index) => {
+        if (!state || state === INITIAL_COLOR) {
+            if (boatPositions[index]) {
+                
+                gridStates[index] = BOAT_COLOR;
+                $('#gridItem-' + index).css('background-color', BOAT_COLOR);
+            }
+        }
+    });
+}
+
+
+
+function updateScoreDisplay() {
+    $('#score').html(score);
+}
+
+    
+    
+    function updateScoreDisplay() {
+        $('#score').html(score);
     }
 
-    function useBomb() {
-        if (bombUses > 0) {
-            bombUses--;
-            updatePowerUpsCount();
-            let bombTargets = [];
+    function updateRadarDisplay() {
+        $('#radarNumber').html(radarCount);
+    }
 
-            while (bombTargets.length < 5) {
-                let randomIndex = Math.floor(Math.random() * gridStates.length);
-                if (!bombTargets.includes(randomIndex)) {
-                    bombTargets.push(randomIndex);
-                }
-            }
-
-            bombTargets.forEach(index => processHit(index));
-            checkWinCondition();
-            updateBoatCount();
+    function useRadar() {
+        if (radarCount > 0) {
+            radarCount--;
+            updateRadarDisplay();
+            revealBoatsTemporarily();
+            
+        } else {
+            alert("No radars available!");
         }
     }
 
-    function updatePowerUpsCount() {
-        $('#bombCount').html(bombUses);
+    
+    $('#useRadarButton').click(function() {
+        useRadar();
+    });
+
+    function tryAcquireRadar() {
+        if (Math.random() < 0.01) { 
+            radarCount++;
+            updateRadarDisplay();
+        }
     }
 
-    $('#useBomb').click(function() {
-        useBomb();
-    });
+    function useRadar() {
+        if (radarCount > 0) {
+            radarCount--;
+            updateRadarDisplay();
+            revealBoatsTemporarily();
+        }
+    }
+
+    function revealBoatsTemporarily() {
+        const originalColors = gridStates.slice(); 
+
+        boatPositions.forEach((isBoat, index) => {
+            if (isBoat && gridStates[index] !== HIT_COLOR) {
+                $('#gridItem-' + index).css('background-color', 'green');
+            }
+        });
+
+        setTimeout(() => {
+            
+            gridStates.forEach((state, index) => {
+                $('#gridItem-' + index).css('background-color', state);
+            });
+        }, 60); 
+    }
+
+    
+    tryAcquireRadar();
+    
 
     createGrid(currentLevel + 3);
 });
